@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # ChromaDB vector database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: docgpt-chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: unless-stopped
+    networks:
+      - docgpt-network
+
+volumes:
+  chroma_data:
+    driver: local
+
+networks:
+  docgpt-network:
+    driver: bridge
