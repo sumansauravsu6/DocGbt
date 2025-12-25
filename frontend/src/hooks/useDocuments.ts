@@ -42,11 +42,11 @@ export const useDocuments = () => {
     }
   }, [getToken]);
 
-  const uploadDocument = useCallback(async (file: File) => {
+  const uploadDocument = useCallback(async (file: File, onProgress?: (progress: number) => void) => {
     setLoading(true);
     setError(null);
     try {
-      const document = await documentService.uploadDocument(file);
+      const document = await documentService.uploadDocument(file, onProgress);
       addDocument(document);
       return document;
     } catch (err) {

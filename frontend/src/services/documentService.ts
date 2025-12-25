@@ -11,7 +11,7 @@ export class DocumentService {
   /**
    * Upload a new document.
    */
-  async uploadDocument(file: File): Promise<Document> {
+  async uploadDocument(file: File, onProgress?: (progress: number) => void): Promise<Document> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -21,6 +21,12 @@ export class DocumentService {
       {
         headers: {
           'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress?.(percentCompleted);
+          }
         },
       }
     );
