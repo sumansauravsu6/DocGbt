@@ -11,7 +11,7 @@ httpx==0.28.1
 
 # Vector database and embeddings
 qdrant-client==1.12.1
-sentence-transformers==5.2.0
+sentence-transformers==2.2.2
 
 # PDF processing
 PyPDF2==3.0.1
