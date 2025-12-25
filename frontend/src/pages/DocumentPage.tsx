@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { useAppStore } from '@/store/appStore';
 import { useDocuments } from '@/hooks/useDocuments';
 
 export const DocumentPage: React.FC = () => {
