@@ -59,11 +59,7 @@ export const useDocuments = () => {
   }, [getToken]);
 
   const deleteDocument = useCallback(async (documentId: string) => {
-    // Optimistic update - immediately update UI before backend call
-    const _deletedDocument = documents.find(doc => doc.id === documentId);
-    const _deletedSessions = sessions.filter(s => s.document_id === documentId);
-    
-    // Immediately remove from UI
+    // Optimistic update - immediately remove from UI before backend call
     removeDocument(documentId);
     
     // Clear selected session if it belongs to this document
