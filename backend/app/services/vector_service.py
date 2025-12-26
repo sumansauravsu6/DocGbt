@@ -2,9 +2,9 @@
 Vector service for Qdrant cloud operations.
 Handles embedding storage and retrieval.
 """
+import requests
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
-from sentence_transformers import SentenceTransformer
 from typing import List, Dict
 from app.config import Config
 from uuid import UUID
@@ -18,10 +18,11 @@ class VectorService:
     """
     
     def __init__(self):
-        """Initialize Qdrant client and embedding model."""
-        # Initialize embedding model first to get vector size
-        self.embedding_model = SentenceTransformer(Config.EMBEDDING_MODEL)
-        self.vector_size = self.embedding_model.get_sentence_embedding_dimension()
+        """Initialize Qdrant client and Jina AI configuration."""
+        # Jina AI configuration
+        self.jina_api_key = Config.JINA_API_KEY
+        self.jina_model = Config.JINA_MODEL
+        self.vector_size = Config.EMBEDDING_VECTOR_SIZE
         
         # Initialize Qdrant client
         self.client = QdrantClient(
@@ -40,17 +41,39 @@ class VectorService:
             collection_exists = any(col.name == self.collection_name for col in collections.collections)
             
             if collection_exists:
-                print(f"✅ Connected to existing Qdrant collection: {self.collection_name}")
-                # Create index for document_id if it doesn't exist (improves filter performance)
-                try:
+                # Check if vector size matches
+                collection_info = self.client.get_collection(self.collection_name)
+                existing_vector_size = collection_info.config.params.vectors.size
+                
+                if existing_vector_size != self.vector_size:
+                    print(f"⚠️ Vector dimension mismatch! Expected {self.vector_size}, got {existing_vector_size}")
+                    print(f"🔄 Recreating collection with correct dimensions...")
+                    # Delete old collection
+                    self.client.delete_collection(self.collection_name)
+                    # Create new collection with correct dimensions
+                    self.client.create_collection(
+                        collection_name=self.collection_name,
+                        vectors_config=VectorParams(size=self.vector_size, distance=Distance.COSINE),
+                    )
+                    # Create index for document_id
                     self.client.create_payload_index(
                         collection_name=self.collection_name,
                         field_name="document_id",
                         field_schema=PayloadSchemaType.KEYWORD
                     )
-                    print(f"✅ Created payload index for document_id")
-                except Exception:
-                    pass  # Index might already exist
+                    print(f"✅ Recreated Qdrant collection with {self.vector_size} dimensions")
+                else:
+                    print(f"✅ Connected to existing Qdrant collection: {self.collection_name}")
+                    # Create index for document_id if it doesn't exist (improves filter performance)
+                    try:
+                        self.client.create_payload_index(
+                            collection_name=self.collection_name,
+                            field_name="document_id",
+                            field_schema=PayloadSchemaType.KEYWORD
+                        )
+                        print(f"✅ Created payload index for document_id")
+                    except Exception:
+                        pass  # Index might already exist
             else:
                 # Create new collection
                 self.client.create_collection(
@@ -67,11 +90,11 @@ class VectorService:
         except Exception as e:
             print(f"⚠️ Warning: Could not verify/create collection: {str(e)}")
         
-        print(f"✅ VectorService initialized with model: {Config.EMBEDDING_MODEL}")
+        print(f"✅ VectorService initialized with Jina AI model: {self.jina_model}")
     
     def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding for text.
+        Generate embedding using Jina AI API.
         
         Args:
             text: Text to embed
@@ -79,8 +102,24 @@ class VectorService:
         Returns:
             List of floats representing embedding vector
         """
-        embedding = self.embedding_model.encode(text, convert_to_numpy=True)
-        return embedding.tolist()
+        url = "https://api.jina.ai/v1/embeddings"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jina_api_key}"
+        }
+        data = {
+            "model": self.jina_model,
+            "input": [text]
+        }
+        
+        try:
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+            return result['data'][0]['embedding']
+        except Exception as e:
+            print(f"❌ Error generating embedding: {str(e)}")
+            raise
     
     def add_document_chunks(self, document_id: UUID, chunks: List[Dict[str, any]]):
         """

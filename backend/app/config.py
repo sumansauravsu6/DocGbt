@@ -43,7 +43,9 @@ class Config:
     ALLOWED_EXTENSIONS = {'pdf'}
     
     # RAG settings
-    EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
+    JINA_API_KEY = os.getenv('JINA_API_KEY')
+    JINA_MODEL = 'jina-embeddings-v2-base-en'  # 768 dimensions
+    EMBEDDING_VECTOR_SIZE = 768
     CHUNK_SIZE = 1500
     CHUNK_OVERLAP = 300
     TOP_K_RESULTS = 8
