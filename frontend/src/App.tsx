@@ -16,8 +16,15 @@ if (!clerkPubKey) {
 }
 
 function App() {
+  // Get current origin for dynamic redirect URLs
+  const appUrl = window.location.origin;
+  
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
+    <ClerkProvider 
+      publishableKey={clerkPubKey}
+      afterSignUpUrl={appUrl}
+      afterSignInUrl={appUrl}
+    >
       <BrowserRouter>
         <Routes>
           {/* Public routes */}

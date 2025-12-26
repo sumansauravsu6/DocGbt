@@ -30,7 +30,14 @@ export const Layout: React.FC = () => {
 
         <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
-          <UserButton afterSignOutUrl="/sign-in" />
+          <UserButton 
+            afterSignOutUrl={`${window.location.origin}/sign-in`}
+            appearance={{
+              elements: {
+                avatarBox: "w-8 h-8 md:w-9 md:h-9"
+              }
+            }}
+          />
         </div>
       </header>
 
